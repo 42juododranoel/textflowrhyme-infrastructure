@@ -1,0 +1,21 @@
+name: Deployment
+
+on:
+  workflow_call:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Reload Containers
+        uses: appleboy/ssh-action@master
+        with:
+          host: 157.230.119.117
+          username: root
+          key: ${{ secrets.SSH_KEY }}
+          passphrase: ${{ secrets.SSH_PASSPHRASE }}
+          script: |
+            cd /root/textflowrhyme-infrastructure
+            docker compose pull
+            docker compose up -d

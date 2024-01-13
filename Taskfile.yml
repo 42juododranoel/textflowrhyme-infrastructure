@@ -48,7 +48,7 @@ tasks:
       - terraform destroy -var-file=.tfvars
     dir: ./terraform
 
-  ansible:install:docker:
+  ansible:install:
     cmds:
-      - ansible-playbook -i inventory.yml playbooks/docker.yml
+      - ansible-playbook -i inventory.yml playbooks/install.yml
     dir: ./ansible

@@ -13,6 +13,7 @@
           - curl
           - gnupg
           - software-properties-common
+          - git
         update_cache: yes
     
     - name: Add key
@@ -40,3 +41,8 @@
       ansible.builtin.service:
         name: docker
         state: started
+
+    - name: Clone repository
+      ansible.builtin.git:
+        repo: https://github.com/42juododranoel/textflowrhyme-infrastructure
+        dest: /root/textflowrhyme-infrastructure
