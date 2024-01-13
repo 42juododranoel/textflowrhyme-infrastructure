@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  backend:
+    image: 42juododranoel/textflowrhyme-backend:latest
+    command: start:deployment
+  frontend:
+    image: 42juododranoel/textflowrhyme-frontend:latest
+    command: start:deployment
+    ports:
+      - 0.0.0.0:80:3000
