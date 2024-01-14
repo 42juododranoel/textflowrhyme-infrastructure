@@ -1,12 +1,12 @@
-# ✍️ Textflowrhyme Infrastructure 📦
+# ✍️ Textflowrhyme Infrastructure 🐳
 
 ## Terraform
 
-- Use `task terraform:apply` to spin up a server on DigitalOcean. Save the server’s IP address to `ansible/inventory.yml`. The opposite of that is `task terraform:destroy`.
+- Use `task terraform:apply` to spin up a server on DigitalOcean. Save the server’s IP address to `ansible/inventory.yml`. The opposite of this command is `task terraform:destroy`.
 - Don’t forget to create DigitalOcean PAT and save it to `terraform/.tfvars`:
-```
-digitalocean_token = "dop_v1_***"
-```
+  ```
+  digitalocean_token = "dop_v1_***"
+  ```
 
 ## Ansible
 
@@ -19,10 +19,10 @@ digitalocean_token = "dop_v1_***"
 - Use `task docker:restart` to run new versions of the services and prune the old ones.
 - This requires `ansible:install`.
 - Don’t forget to create `.env` first:
-```
-DOMAIN=textflowrhy.me
-EMAIL=***
-CERT_RESOLVER=letsencrypt
-TRAEFIK_USER=***
-TRAEFIK_PASSWORD_HASH='***'
-```
+  ```
+  DOMAIN=textflowrhy.me
+  EMAIL=***
+  CERT_RESOLVER=letsencrypt
+  TRAEFIK_USER=***
+  TRAEFIK_PASSWORD_HASH='***'
+  ```
