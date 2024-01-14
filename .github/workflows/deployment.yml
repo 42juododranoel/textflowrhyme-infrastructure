@@ -17,6 +17,4 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd /root/textflowrhyme-infrastructure
-            docker compose pull
-            docker compose up -d
-            docker system prune --volumes -af
+            task docker:restart

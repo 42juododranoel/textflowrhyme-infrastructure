@@ -46,3 +46,8 @@
       ansible.builtin.git:
         repo: https://github.com/42juododranoel/textflowrhyme-infrastructure
         dest: /root/textflowrhyme-infrastructure
+
+    - name: Install Taskfile
+      ansible.builtin.shell: |
+        sh -c "$(curl --location https://taskfile.dev/install.sh)" -- -d
+        echo 'export PATH=$PATH:/root/bin' >> ~/.profile

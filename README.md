@@ -2,21 +2,24 @@
 
 ## Terraform
 
-`task terraform:apply`
-`task terraform:destroy`
-
-`terraform/.tfvars` contents:
+- Use `task terraform:apply` to spin up a server on DigitalOcean. Save the server’s IP address to `ansible/inventory.yml`.
+- Use `task terraform:destroy` to delete the server.
+- Don’t forget to create DigitalOcean PAT and save it to `terraform/.tfvars`:
 ```
 digitalocean_token = "dop_v1_***"
 ```
 
 ## Ansible
 
-`task ansible:install`
+- Use `task ansible:install` to install Docker and Taskfile.
+- This requires `terraform:apply`.
 
-## Traefik
 
-`.env` contents:
+## Docker
+
+- Use `task docker:restart` to run new versions of the services and prune the old ones.
+- This requires `ansible:install`.
+- Don’t forget to create `.env` first:
 ```
 DOMAIN=textflowrhy.me
 EMAIL=***
@@ -24,5 +27,3 @@ CERT_RESOLVER=letsencrypt
 TRAEFIK_USER=***
 TRAEFIK_PASSWORD_HASH='***'
 ```
-
-Password hash should be generated with `htpasswd -nBC 10 <USERNAME>`.
