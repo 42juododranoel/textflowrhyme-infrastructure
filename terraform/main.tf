@@ -24,6 +24,7 @@ resource "digitalocean_droplet" "textflowrhyme" {
   name = "textflowrhyme"
   region = "fra1"
   size = "s-1vcpu-512mb-10gb"
+  ipv6 = true
   ssh_keys = [data.digitalocean_ssh_key.textflowrhyme.id]
 }
 
