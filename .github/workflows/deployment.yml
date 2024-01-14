@@ -17,4 +17,5 @@ jobs:
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
             cd /root/textflowrhyme-infrastructure
+            git pull origin master
             task docker:restart
