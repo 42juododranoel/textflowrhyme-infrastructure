@@ -2,8 +2,7 @@
 
 ## Terraform
 
-- Use `task terraform:apply` to spin up a server on DigitalOcean. Save the server’s IP address to `ansible/inventory.yml`.
-- Use `task terraform:destroy` to delete the server.
+- Use `task terraform:apply` to spin up a server on DigitalOcean. Save the server’s IP address to `ansible/inventory.yml`. The opposite of that is `task terraform:destroy`.
 - Don’t forget to create DigitalOcean PAT and save it to `terraform/.tfvars`:
 ```
 digitalocean_token = "dop_v1_***"
