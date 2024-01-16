@@ -16,6 +16,6 @@ jobs:
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
           script: |
-            cd /root/textflowrhyme-infrastructure
+            cd ~/textflowrhyme-infrastructure
             git pull origin master
             ~/bin/task docker:restart
