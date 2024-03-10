@@ -1,28 +1,101 @@
 version: '3'
 
+x-fief: &fief
+  image: ghcr.io/fief-dev/fief:latest
+  links:
+    - postgres
+    - redis
+  environment:
+    - LOG_LEVEL=DEBUG
+    - PORT=8000
+    - WEB_CONCURRENCY=1
+    - SECRET=${FIEF_SECRET}
+    - ENCRYPTION_KEY=${FIEF_ENCRYPTION_KEY}
+    - ROOT_DOMAIN=${DOMAIN}
+    - FIEF_DOMAIN=fief.${DOMAIN}
+    - REDIS_URL=redis://redis:6379
+    - TELEMETRY_ENABLED=false
+    - ALLOW_ORIGIN_REGEX=${FIEF_ALLOW_ORIGIN_REGEX}
+    #
+    - FIEF_CLIENT_ID=${FIEF_CLIENT_ID}
+    - FIEF_CLIENT_SECRET=${FIEF_CLIENT_SECRET}
+    - FIEF_MAIN_USER_EMAIL=${FIEF_MAIN_USER_EMAIL}
+    - FIEF_MAIN_USER_PASSWORD=${FIEF_MAIN_USER_PASSWORD}
+    #
+    - EMAIL_PROVIDER=POSTMARK
+    - EMAIL_PROVIDER_PARAMS=${FIEF_EMAIL_PROVIDER_PARAMS}
+    - DEFAULT_FROM_EMAIL=${FIEF_DEFAULT_FROM_EMAIL}
+    #
+    - DATABASE_USERNAME=${POSTGRES_USER}
+    - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+    - DATABASE_NAME=${POSTGRES_DATABASE_FIEF}
+    - DATABASE_TYPE=POSTGRESQL
+    - DATABASE_HOST=postgres
+    - DATABASE_PORT=5432
+
 services:
+  postgres:
+    image: postgres:alpine
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+    user: postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_DATABASE_BACKEND},${POSTGRES_DATABASE_FIEF}
+    volumes:
+      - ./docker/postgres/:/docker-entrypoint-initdb.d:ro
+
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 5s
+      timeout: 5s
+    command: redis-server --save 60 1 --loglevel warning
+
+  fief-worker:
+    <<: *fief
+    command: fief run-worker -p 1 -t 1
+
+  fief-server:
+    <<: *fief
+    command: fief run-server
+    labels:
+      traefik.enable: true
+      traefik.http.services.fief.loadbalancer.server.port: 8000
+      traefik.http.services.fief.loadbalancer.server.scheme: https
+      traefik.http.routers.fief.rule: Host(`fief.${DOMAIN}`)
+      traefik.http.routers.fief.entrypoints: https
+      traefik.http.routers.fief.tls: true
+      traefik.http.routers.fief.tls.certresolver: ${TRAEFIK_CERT_RESOLVER}
+
   backend:
     image: 42juododranoel/textflowrhyme-backend:latest
     command: start:deployment
     labels:
+      traefik.enable: true
+      traefik.http.services.backend.loadbalancer.server.port: 8000
       traefik.http.routers.backend.rule: Host(`backend.${DOMAIN}`)
       traefik.http.routers.backend.entrypoints: https
       traefik.http.routers.backend.tls: true
-      traefik.http.routers.backend.tls.certresolver: ${CERT_RESOLVER}
-      traefik.http.services.backend.loadbalancer.server.port: 8000
+      traefik.http.routers.backend.tls.certresolver: ${TRAEFIK_CERT_RESOLVER}
 
   frontend:
     image: 42juododranoel/textflowrhyme-frontend:latest
     command: start:deployment
     labels:
+      traefik.enable: true
+      traefik.http.services.frontend.loadbalancer.server.port: 3000
       traefik.http.routers.frontend.rule: Host(`${DOMAIN}`)
       traefik.http.routers.frontend.entrypoints: https
       traefik.http.routers.frontend.tls: true
-      traefik.http.routers.frontend.tls.certresolver: ${CERT_RESOLVER}
-      traefik.http.services.frontend.loadbalancer.server.port: 3000
-  
+      traefik.http.routers.frontend.tls.certresolver: ${TRAEFIK_CERT_RESOLVER}
+
   traefik:
-    image: traefik:2.4.8
+    image: traefik:2.10.7
     ports:
       - 80:80
       - 443:443
@@ -32,23 +105,24 @@ services:
     command:
       - --api=true
       - --providers.docker=true
+      - --providers.docker.exposedByDefault=false
       - --entrypoints.http.address=:80
       - --entrypoints.https.address=:443
       - --certificatesresolvers.letsencrypt.acme.httpchallenge=true
       - --certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=http
-      - --certificatesresolvers.letsencrypt.acme.email=${EMAIL}
+      - --certificatesresolvers.letsencrypt.acme.email=${TRAEFIK_EMAIL}
       - --certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json
     labels:
       traefik.http.routers.traefik.rule: Host(`traefik.${DOMAIN}`)
       traefik.http.routers.traefik.entrypoints: https
       traefik.http.routers.traefik.tls: true
-      traefik.http.routers.traefik.tls.certresolver: ${CERT_RESOLVER}
+      traefik.http.routers.traefik.tls.certresolver: ${TRAEFIK_CERT_RESOLVER}
       traefik.http.routers.traefik.middlewares: auth
       traefik.http.routers.traefik.service: api@internal
       #
-      traefik.http.middlewares.to-https.redirectscheme.scheme: https
-      traefik.http.middlewares.auth.basicauth.users: ${TRAEFIK_USER}:${TRAEFIK_PASSWORD_HASH}
+      traefik.http.routers.https-redirect.rule: HostRegexp(`{host:.+}`)
+      traefik.http.routers.https-redirect.entrypoints: http
+      traefik.http.routers.https-redirect.middlewares: https-redirect
       #
-      traefik.http.routers.to-https.rule: HostRegexp(`{host:.+}`)
-      traefik.http.routers.to-https.entrypoints: http
-      traefik.http.routers.to-https.middlewares: to-https
+      traefik.http.middlewares.https-redirect.redirectscheme.scheme: https
+      traefik.http.middlewares.auth.basicauth.users: ${TRAEFIK_USER}:${TRAEFIK_PASSWORD_HASH}
