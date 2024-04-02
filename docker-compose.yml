@@ -1,38 +1,5 @@
 version: '3'
 
-x-fief: &fief
-  image: ghcr.io/fief-dev/fief:latest
-  links:
-    - postgres
-    - redis
-  environment:
-    - LOG_LEVEL=DEBUG
-    - PORT=8000
-    - WEB_CONCURRENCY=1
-    - SECRET=${FIEF_SECRET}
-    - ENCRYPTION_KEY=${FIEF_ENCRYPTION_KEY}
-    - ROOT_DOMAIN=${DOMAIN}
-    - FIEF_DOMAIN=fief.${DOMAIN}
-    - REDIS_URL=redis://redis:6379
-    - TELEMETRY_ENABLED=false
-    - ALLOW_ORIGIN_REGEX=${FIEF_ALLOW_ORIGIN_REGEX}
-    #
-    - FIEF_CLIENT_ID=${FIEF_CLIENT_ID}
-    - FIEF_CLIENT_SECRET=${FIEF_CLIENT_SECRET}
-    - FIEF_MAIN_USER_EMAIL=${FIEF_MAIN_USER_EMAIL}
-    - FIEF_MAIN_USER_PASSWORD=${FIEF_MAIN_USER_PASSWORD}
-    #
-    - EMAIL_PROVIDER=POSTMARK
-    - EMAIL_PROVIDER_PARAMS=${FIEF_EMAIL_PROVIDER_PARAMS}
-    - DEFAULT_FROM_EMAIL=${FIEF_DEFAULT_FROM_EMAIL}
-    #
-    - DATABASE_USERNAME=${POSTGRES_USER}
-    - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
-    - DATABASE_NAME=${POSTGRES_DATABASE_FIEF}
-    - DATABASE_TYPE=POSTGRESQL
-    - DATABASE_HOST=postgres
-    - DATABASE_PORT=5432
-
 services:
   postgres:
     image: postgres:alpine
@@ -44,7 +11,7 @@ services:
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_DATABASE_BACKEND},${POSTGRES_DATABASE_FIEF}
+      - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_DATABASE_BACKEND}
     volumes:
       - ./docker/postgres/:/docker-entrypoint-initdb.d:ro
 
@@ -56,28 +23,13 @@ services:
       timeout: 5s
     command: redis-server --save 60 1 --loglevel warning
 
-  fief-worker:
-    <<: *fief
-    command: fief run-worker -p 1 -t 1
-
-  fief-server:
-    <<: *fief
-    command: fief run-server
-    labels:
-      traefik.enable: true
-      traefik.http.services.fief.loadbalancer.server.port: 8000
-      traefik.http.services.fief.loadbalancer.server.scheme: https
-      traefik.http.routers.fief.rule: Host(`fief.${DOMAIN}`)
-      traefik.http.routers.fief.entrypoints: https
-      traefik.http.routers.fief.tls: true
-      traefik.http.routers.fief.tls.certresolver: ${TRAEFIK_CERT_RESOLVER}
-
   backend:
     image: 42juododranoel/textflowrhyme-backend:latest
     command: start:deployment
     labels:
       traefik.enable: true
       traefik.http.services.backend.loadbalancer.server.port: 8000
+      #
       traefik.http.routers.backend.rule: Host(`backend.${DOMAIN}`)
       traefik.http.routers.backend.entrypoints: https
       traefik.http.routers.backend.tls: true
@@ -89,6 +41,7 @@ services:
     labels:
       traefik.enable: true
       traefik.http.services.frontend.loadbalancer.server.port: 3000
+      #
       traefik.http.routers.frontend.rule: Host(`${DOMAIN}`)
       traefik.http.routers.frontend.entrypoints: https
       traefik.http.routers.frontend.tls: true

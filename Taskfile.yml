@@ -46,10 +46,6 @@ tasks:
     cmds:
       - htpasswd -nBC 10 {{ .CLI_ARGS }}
 
-  generate-fief-variables:
-    cmds:
-      - docker run -it --rm ghcr.io/fief-dev/fief:latest fief quickstart --docker
-
   # Maintenance
 
   terraform:apply:
