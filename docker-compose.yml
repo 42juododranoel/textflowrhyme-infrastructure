@@ -1,54 +1,6 @@
 version: '3'
 
 services:
-  postgres:
-    image: postgres:alpine
-    healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
-      interval: 5s
-      timeout: 5s
-    user: postgres
-    environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_DATABASE_BACKEND}
-    volumes:
-      - ./docker/postgres/:/docker-entrypoint-initdb.d:ro
-
-  redis:
-    image: redis:alpine
-    healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
-      interval: 5s
-      timeout: 5s
-    command: redis-server --save 60 1 --loglevel warning
-
-  backend:
-    image: 42juododranoel/textflowrhyme-backend:latest
-    command: start:deployment
-    environment:
-      - SENTRY_DSN=${BACKEND_SENTRY_DSN}
-    labels:
-      traefik.enable: true
-      traefik.http.services.backend.loadbalancer.server.port: 8000
-      #
-      traefik.http.routers.backend.rule: Host(`backend.${DOMAIN}`)
-      traefik.http.routers.backend.entrypoints: https
-      traefik.http.routers.backend.tls: true
-      traefik.http.routers.backend.tls.certresolver: ${TRAEFIK_CERT_RESOLVER}
-
-  frontend:
-    image: 42juododranoel/textflowrhyme-frontend:latest
-    command: start:deployment
-    labels:
-      traefik.enable: true
-      traefik.http.services.frontend.loadbalancer.server.port: 3000
-      #
-      traefik.http.routers.frontend.rule: Host(`${DOMAIN}`)
-      traefik.http.routers.frontend.entrypoints: https
-      traefik.http.routers.frontend.tls: true
-      traefik.http.routers.frontend.tls.certresolver: ${TRAEFIK_CERT_RESOLVER}
-
   traefik:
     image: traefik:2.10.7
     ports:
@@ -81,3 +33,56 @@ services:
       #
       traefik.http.middlewares.https-redirect.redirectscheme.scheme: https
       traefik.http.middlewares.auth.basicauth.users: ${TRAEFIK_USER}:${TRAEFIK_PASSWORD_HASH}
+
+  frontend:
+    image: 42juododranoel/textflowrhyme-frontend:latest
+    command: start:deployment
+    labels:
+      traefik.enable: true
+      traefik.http.services.frontend.loadbalancer.server.port: 3000
+      #
+      traefik.http.routers.frontend.rule: Host(`${DOMAIN}`)
+      traefik.http.routers.frontend.entrypoints: https
+      traefik.http.routers.frontend.tls: true
+      traefik.http.routers.frontend.tls.certresolver: ${TRAEFIK_CERT_RESOLVER}
+
+  backend:
+    image: 42juododranoel/textflowrhyme-backend:latest
+    command: start:deployment
+    environment:
+      - SENTRY_DSN=${BACKEND_SENTRY_DSN}
+      - DATABASE_NAME=${POSTGRES_DATABASE_BACKEND}
+      - DATABASE_USERNAME=${POSTGRES_USER}
+      - DATABASE_PASSWORD=${POSTGRES_PASSWORD}
+      - DATABASE_HOST=postgres
+      - DATABASE_PORT=5432
+    labels:
+      traefik.enable: true
+      traefik.http.services.backend.loadbalancer.server.port: 8000
+      #
+      traefik.http.routers.backend.rule: Host(`backend.${DOMAIN}`)
+      traefik.http.routers.backend.entrypoints: https
+      traefik.http.routers.backend.tls: true
+      traefik.http.routers.backend.tls.certresolver: ${TRAEFIK_CERT_RESOLVER}
+
+  postgres:
+    image: postgres:alpine
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+    user: postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_MULTIPLE_DATABASES=${POSTGRES_DATABASE_BACKEND}
+    volumes:
+      - ./docker/postgres/:/docker-entrypoint-initdb.d:ro
+
+  redis:
+    image: redis:alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 5s
+      timeout: 5s
+    command: redis-server --save 60 1 --loglevel warning
