@@ -71,6 +71,7 @@ tasks:
   ansible:install:
     cmds:
       - ansible-playbook -i inventory.yml playbooks/install.yml
+      - echo "Now manually set .env values"
     dir: ./ansible
 
   docker:restart:
