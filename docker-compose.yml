@@ -26,6 +26,8 @@ services:
   backend:
     image: 42juododranoel/textflowrhyme-backend:latest
     command: start:deployment
+    environment:
+      - SENTRY_DSN=${BACKEND_SENTRY_DSN}
     labels:
       traefik.enable: true
       traefik.http.services.backend.loadbalancer.server.port: 8000
