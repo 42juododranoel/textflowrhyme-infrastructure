@@ -23,7 +23,7 @@ resource "digitalocean_droplet" "textflowrhyme" {
   image = "ubuntu-23-10-x64"
   name = "textflowrhyme"
   region = "fra1"
-  size = "s-1vcpu-512mb-10gb"
+  size = "s-1vcpu-1gb"
   ipv6 = true
   ssh_keys = [data.digitalocean_ssh_key.textflowrhyme.id]
 }

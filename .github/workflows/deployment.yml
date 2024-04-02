@@ -14,7 +14,7 @@ jobs:
       - name: Reload Containers
         uses: appleboy/ssh-action@master
         with:
-          host: 157.230.119.117
+          host: 142.93.102.51
           username: root
           key: ${{ secrets.SSH_KEY }}
           passphrase: ${{ secrets.SSH_PASSPHRASE }}
